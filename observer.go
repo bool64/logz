@@ -11,11 +11,26 @@ import (
 
 // Config defines observer configuration.
 type Config struct {
-	Name             string
-	MaxCardinality   uint32
-	MaxSamples       uint32
+	// Name can be used to identify observer instance in a group, for example a group of log levels.
+	Name string
+
+	// MaxCardinality limits number of distinct message families being tracked.
+	// All messages that exceed cardinality are grouped together as "other".
+	// Default 100.
+	MaxCardinality uint32
+
+	// MaxSamples limits a number of latest samples kept for a message family.
+	// Default 10.
+	MaxSamples uint32
+
+	// SamplingInterval is the minimum amount of time needed to pass from a last sample collection in particular message family.
+	// Messages that are observed too quickly after last sampling are counted, but not sampled.
+	// Default 1ms.
 	SamplingInterval time.Duration
-	DistResolution   int
+
+	// DistResolution is the maximum number of time interval buckets to track distribution in time.
+	// Default 100.
+	DistResolution int
 }
 
 // Observer keeps track of messages.
