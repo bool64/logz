@@ -1,13 +1,13 @@
 package logz_test
 
 import (
-	"github.com/stretchr/testify/assert"
 	"sort"
 	"strconv"
 	"sync"
 	"testing"
 
 	"github.com/bool64/logz"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestObserver_ObserveMessage(t *testing.T) {
