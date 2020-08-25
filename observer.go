@@ -242,6 +242,7 @@ func (l *Observer) Find(msg string) Entry {
 	l.entries.Range(func(key, value interface{}) bool {
 		if value.(*entry).msg == msg {
 			e = l.exportEntry(value.(*entry), true)
+
 			return false
 		}
 
