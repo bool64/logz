@@ -2,6 +2,7 @@
 package logzpage
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -23,7 +24,7 @@ type tplData struct {
 
 // Handler creates HTTP handler to expose entries from observers.
 func Handler(observers ...*logz.Observer) http.Handler {
-	//language=GoTemplate
+	// language=GoTemplate
 	tpl := `{{- /*gotype: github.com/bool64/logz/logzpage.tplData*/ -}}
 <!DOCTYPE html>
 <html lang="en">
@@ -77,7 +78,7 @@ func Handler(observers ...*logz.Observer) http.Handler {
     <tbody>
 {{ range .Entries }}
     <tr>
-        <td><a href="?msg={{ .Message }}&level={{ $.Level }}">{{ .Message }}</a></td>
+        <td><a href="?msg={{ .Message }}&amp;level={{ $.Level }}">{{ .Message }}</a></td>
         <td>{{ time .First }}</td>
         <td>{{ time .Last }}</td>
         <td>{{ .Count }}</td>
@@ -148,12 +149,16 @@ func Handler(observers ...*logz.Observer) http.Handler {
 				return template.JS(bb)
 			}
 
-			j, err := json.MarshalIndent(v, "", " ")
+			b := bytes.Buffer{}
+			enc := json.NewEncoder(&b)
+			enc.SetEscapeHTML(false)
+			enc.SetIndent("", " ")
+			err := enc.Encode(v)
 			if err != nil {
 				return template.JS(err.Error())
 			}
 
-			return template.JS(j)
+			return template.JS(b.Bytes())
 		},
 		"histogram": func(buckets []logz.Bucket) template.HTML {
 			return template.HTML(Histogram(buckets))
@@ -209,7 +214,6 @@ func Handler(observers ...*logz.Observer) http.Handler {
 		}
 
 		err := t.Execute(w, data)
-
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}

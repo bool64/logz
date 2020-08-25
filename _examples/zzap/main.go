@@ -31,7 +31,7 @@ func main() {
 	}
 
 	l.Debug("starting example")
-	l.Sugar().Infow("sample info", "one", 1, "two", 2)
+	l.Sugar().Infow("sample info", "one", 1, "two", 2, "special", "<?&>")
 	l.Error("unexpected end of the world")
 
 	lorem.Sentence(3, 6)
