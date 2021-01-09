@@ -30,6 +30,9 @@ linters:
     - funlen
     - maligned
     - gocognit
+    - wrapcheck
+    - paralleltest
+    - exhaustivestruct
 
 issues:
   exclude-use-default: false
