@@ -47,6 +47,8 @@ func BenchmarkObserver_ObserveMessage(b *testing.B) {
 	wg := sync.WaitGroup{}
 	concurrency := 50
 
+	b.ReportAllocs()
+
 	for i := 0; i < concurrency; i++ {
 		msg := "message" + strconv.Itoa(i)
 
