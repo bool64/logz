@@ -69,7 +69,7 @@ type sample struct {
 }
 
 func (en *entry) push(now int64, sample sample) {
-	atomic.AddUint64(&en.count, 1)
+	cnt := atomic.AddUint64(&en.count, 1)
 
 	if en.distribution != nil {
 		en.distribution.Add(float64(now))
@@ -83,7 +83,7 @@ func (en *entry) push(now int64, sample sample) {
 		}
 	}
 
-	if now <= atomic.LoadInt64(&en.latest) {
+	if cnt > uint64(cap(en.samples)) && now <= atomic.LoadInt64(&en.latest) {
 		return
 	}
 
