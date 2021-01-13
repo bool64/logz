@@ -1,6 +1,7 @@
 package zzap_test
 
 import (
+	"encoding/json"
 	"strconv"
 	"testing"
 
@@ -22,13 +23,19 @@ func TestNewOption(t *testing.T) {
 	l, err := zc.Build(zz)
 	require.NoError(t, err)
 
-	l.Sugar().Warnw("message", "index", 1)
+	l.With(zap.String("k", "v")).Sugar().Warnw("message", "index", 1)
 
-	entries := lo[zap.WarnLevel+1].GetEntries()
+	entries := lo[zap.WarnLevel+1].GetEntriesWithSamples()
 	assert.Equal(t, uint64(1), entries[0].Count)
+	assert.Equal(t, "message", entries[0].Message)
+	j, err := json.Marshal(entries[0].Samples[0])
+	assert.NoError(t, err)
+	assert.Contains(t, string(j), `"msg":"message","index":1,"k":"v"`)
 }
 
-func BenchmarkNewOption(b *testing.B) {
+func BenchmarkLogzSugarWarn(b *testing.B) {
+	b.ReportAllocs()
+
 	zc := zap.NewProductionConfig()
 	zz, _ := zzap.NewOption(logz.Config{
 		MaxCardinality: 5,
@@ -37,6 +44,20 @@ func BenchmarkNewOption(b *testing.B) {
 	zc.OutputPaths = nil
 
 	l, err := zc.Build(zz)
+	require.NoError(b, err)
+
+	for i := 0; i < b.N; i++ {
+		l.Sugar().Warnw("message"+strconv.Itoa(i%100), "index", i)
+	}
+}
+
+func BenchmarkRawSugarWarn(b *testing.B) {
+	b.ReportAllocs()
+
+	zc := zap.NewProductionConfig()
+	zc.OutputPaths = nil
+
+	l, err := zc.Build()
 	require.NoError(b, err)
 
 	for i := 0; i < b.N; i++ {
