@@ -4,9 +4,8 @@ go 1.13
 
 require (
 	github.com/bool64/dev v0.1.13
-	github.com/stretchr/testify v1.7.0
+	github.com/stretchr/testify v1.4.0
 	github.com/vearutop/dynhist-go v1.0.0
 	go.uber.org/multierr v1.6.0 // indirect
 	go.uber.org/zap v1.16.0
-	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 )
