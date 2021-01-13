@@ -1,15 +1,15 @@
 package main
 
 import (
-	"github.com/bool64/logz/zzap"
-	"go.uber.org/zap"
 	"math/rand"
 	"net/http"
 	"time"
 
 	"github.com/bool64/logz"
 	"github.com/bool64/logz/logzpage"
+	"github.com/bool64/logz/zzap"
 	lorem "github.com/drhodes/golorem"
+	"go.uber.org/zap"
 )
 
 func main() {

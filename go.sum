@@ -1,7 +1,7 @@
 github.com/BurntSushi/toml v0.3.1 h1:WXkYYl6Yr3qBf1K79EBnL4mak0OimBfB0XUf9Vl28OQ=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
-github.com/bool64/dev v0.1.12 h1:mbuWBtCtOGwqt2lN1/9oPmn70XaOHdv2YHzQ31Zf9ks=
-github.com/bool64/dev v0.1.12/go.mod h1:pn52JC52uSgpazChx9CeXyG+S3sW2V36HHoLNBbscdg=
+github.com/bool64/dev v0.1.13 h1:edfquat4DBM1FBVMtm+z4Ksf1Du/S+qiAjslmE3xdIM=
+github.com/bool64/dev v0.1.13/go.mod h1:pn52JC52uSgpazChx9CeXyG+S3sW2V36HHoLNBbscdg=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=

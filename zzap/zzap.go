@@ -10,6 +10,7 @@ import (
 type obCore struct {
 	observers []*logz.Observer
 	encoder   zapcore.Encoder
+	fields    []zapcore.Field
 
 	zapcore.Core
 }
@@ -29,6 +30,17 @@ func (e entry) MarshalJSON() ([]byte, error) {
 	return b.Bytes(), nil
 }
 
+func (c obCore) With(fields []zapcore.Field) zapcore.Core {
+	if len(fields) == 0 {
+		return c
+	}
+
+	c.Core = c.Core.With(fields)
+	c.fields = append(c.fields[0:len(c.fields):len(c.fields)], fields...)
+
+	return c
+}
+
 func (c obCore) Check(entry zapcore.Entry, checkedEntry *zapcore.CheckedEntry) *zapcore.CheckedEntry {
 	return c.Core.Check(entry, checkedEntry.AddCore(entry, c))
 }
@@ -37,7 +49,7 @@ func (c obCore) Write(msg zapcore.Entry, fields []zapcore.Field) error {
 	c.observers[msg.Level+1].ObserveMessage(msg.Message, entry{
 		encoder: c.encoder,
 		msg:     msg,
-		fields:  fields,
+		fields:  append(fields, c.fields...),
 	})
 
 	return nil

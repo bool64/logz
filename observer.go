@@ -31,29 +31,35 @@ type Config struct {
 	// DistResolution is the maximum number of time interval buckets to track distribution in time.
 	// Default 100.
 	DistResolution int
+
+	// DistRetentionPeriod is maximum age of bucket. Use -1 for unlimited.
+	// Default one week (168 hours).
+	DistRetentionPeriod time.Duration
 }
 
 // Observer keeps track of messages.
 type Observer struct {
 	Config
 
-	samplingInterval int64
-	count            uint32
-	maxCardinality   uint32
-	maxSamples       uint32
-	distResolution   int
-	entries          sync.Map
-	once             sync.Once
-	other            *entry
+	samplingInterval    int64
+	count               uint32
+	maxCardinality      uint32
+	maxSamples          uint32
+	distResolution      int
+	distRetentionPeriod int64
+	entries             sync.Map
+	once                sync.Once
+	other               *entry
 }
 
 type entry struct {
-	msg          string
-	samples      chan sample
-	count        uint64
-	first        int64
-	latest       int64
-	distribution *dynhist.Collector
+	msg                 string
+	samples             chan sample
+	count               uint64
+	first               int64
+	latest              int64
+	distribution        *dynhist.Collector
+	distRetentionPeriod int64
 }
 
 type sample struct {
@@ -67,6 +73,14 @@ func (en *entry) push(now int64, sample sample) {
 
 	if en.distribution != nil {
 		en.distribution.Add(float64(now))
+
+		if en.distRetentionPeriod > 0 {
+			en.distribution.Lock()
+			if int64(en.distribution.Buckets[0].Min) < now-en.distRetentionPeriod {
+				en.distribution.Buckets = append(en.distribution.Buckets[:0:0], en.distribution.Buckets[1:]...)
+			}
+			en.distribution.Unlock()
+		}
 	}
 
 	if now <= atomic.LoadInt64(&en.latest) {
@@ -82,7 +96,6 @@ func (en *entry) push(now int64, sample sample) {
 
 func (l *Observer) initialize() {
 	l.samplingInterval = int64(l.SamplingInterval)
-
 	if l.samplingInterval == 0 {
 		l.samplingInterval = int64(time.Millisecond) // 1ms sampling interval by default.
 	}
@@ -102,6 +115,11 @@ func (l *Observer) initialize() {
 		l.distResolution = 100
 	}
 
+	l.distRetentionPeriod = int64(l.DistRetentionPeriod)
+	if l.distRetentionPeriod == 0 {
+		l.distRetentionPeriod = int64(168 * time.Hour)
+	}
+
 	l.other = &entry{
 		samples: make(chan sample, l.maxSamples),
 	}
@@ -113,6 +131,7 @@ func (l *Observer) initialize() {
 		l.other.distribution = &dynhist.Collector{
 			BucketsLimit: l.distResolution,
 		}
+		l.other.distRetentionPeriod = l.distRetentionPeriod
 	}
 }
 
@@ -146,6 +165,7 @@ func (l *Observer) ObserveMessage(msg string, data interface{}) {
 			e.distribution = &dynhist.Collector{
 				BucketsLimit: l.distResolution,
 			}
+			e.distRetentionPeriod = l.distRetentionPeriod
 		}
 
 		for i := uint32(0); i < l.maxSamples; i++ {
@@ -222,12 +242,25 @@ type Bucket struct {
 	Count uint64
 }
 
-// GetEntries returns a list of observed event entries.
+// GetEntries returns a list of observed event entries without data samples.
 func (l *Observer) GetEntries() []Entry {
 	result := make([]Entry, 0, atomic.LoadUint32(&l.count))
 
 	l.entries.Range(func(key, value interface{}) bool {
 		result = append(result, l.exportEntry(value.(*entry), false))
+
+		return true
+	})
+
+	return result
+}
+
+// GetEntriesWithSamples returns a list of observed event entries with data samples.
+func (l *Observer) GetEntriesWithSamples() []Entry {
+	result := make([]Entry, 0, atomic.LoadUint32(&l.count))
+
+	l.entries.Range(func(key, value interface{}) bool {
+		result = append(result, l.exportEntry(value.(*entry), true))
 
 		return true
 	})
