@@ -10,6 +10,7 @@ They are useful for last mile observability of logs.
 [![Build Status](https://github.com/bool64/logz/workflows/test/badge.svg)](https://github.com/bool64/logz/actions?query=branch%3Amaster+workflow%3Atest)
 [![Coverage Status](https://codecov.io/gh/bool64/logz/branch/master/graph/badge.svg)](https://codecov.io/gh/bool64/logz)
 [![GoDevDoc](https://img.shields.io/badge/dev-doc-00ADD8?logo=go)](https://pkg.go.dev/github.com/bool64/logz)
+[![time tracker](https://wakatime.com/badge/github/bool64/logz.svg)](https://wakatime.com/badge/github/bool64/logz)
 ![Code lines](https://sloc.xyz/github/bool64/logz/?category=code)
 ![Comments](https://sloc.xyz/github/bool64/logz/?category=comments)
 
