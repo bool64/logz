@@ -78,7 +78,7 @@ func Handler(observers ...*logz.Observer) http.Handler {
     <tbody>
 {{ range .Entries }}
     <tr>
-        <td><a href="?msg={{ .Message }}&amp;level={{ $.Level }}">{{ .Message }}</a></td>
+        <td><a href="?msg={{ .Message }}&amp;level={{ $.Level }}#samples">{{ .Message }}</a></td>
         <td>{{ time .First }}</td>
         <td>{{ time .Last }}</td>
         <td>{{ .Count }}</td>
@@ -119,7 +119,7 @@ func Handler(observers ...*logz.Observer) http.Handler {
 
 {{ histogram .Details.Buckets }}
 
-<h3>Samples</h3>
+<h3 id="samples">Samples</h3>
 <table class="pure-table pure-table-horizontal">
     <thead>
     <tr>
