@@ -210,7 +210,7 @@ func (l *Observer) exportEntry(en *entry, withSamples bool) Entry {
 	if withSamples {
 		e.Samples = make([]interface{}, 0, l.maxSamples)
 
-		for i := uint32(0); i < l.maxSamples; i++ {
+		for i := int(l.maxSamples) - 1; i >= 0; i-- {
 			sample := <-en.samples
 			en.samples <- sample
 
