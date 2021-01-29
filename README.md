@@ -18,11 +18,12 @@ They are useful for last mile observability of logs.
 
 * High performance and low resource consumption.
 * Adapter for [`go.uber.org/zap`](./zzap).
+* Adapter for [`github.com/bool64/ctxd`](./ctxz).
 * HTTP handler to serve aggregated messages.
 
 ![Screenshot](./_examples/screenshot.png)
 
-## Example
+## Example for `go.uber.org/zap`
 
 ```go
 zc := zap.NewDevelopmentConfig()
@@ -44,5 +45,32 @@ l.Info("starting server at http://localhost:6060/")
 err = http.ListenAndServe("0.0.0.0:6060", logzpage.Handler(lo...))
 if err != nil {
     l.Fatal(err.Error())
+}
+```
+
+## Example for `github.com/bool64/ctxd`
+
+```go
+var logger ctxd.Logger
+
+lz := ctxz.NewObserver(logger, logz.Config{
+    MaxCardinality:      100,
+    MaxSamples:          50,
+    DistRetentionPeriod: 72 * time.Hour,
+})
+logger = lz
+
+ctx := context.TODO()
+
+logger.Debug(ctx, "starting example")
+logger.Info(ctx, "sample info", "one", 1, "two", 2)
+logger.Error(ctx, "unexpected end of the world")
+
+logger.Important(ctx, "starting server at http://localhost:6060/")
+
+err := http.ListenAndServe("0.0.0.0:6060", logzpage.Handler(lz.LevelObservers()...))
+if err != nil {
+    logger.Error(ctx, err.Error())
+    os.Exit(1)
 }
 ```
