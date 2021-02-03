@@ -2,6 +2,7 @@
 package ctxz
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 
@@ -53,7 +54,17 @@ func (t tuples) MarshalJSON() ([]byte, error) {
 		}
 	}
 
-	return json.Marshal(m)
+	b := bytes.Buffer{}
+	e := json.NewEncoder(&b)
+
+	e.SetEscapeHTML(false)
+
+	err := e.Encode(m)
+	if err != nil {
+		return nil, err
+	}
+
+	return b.Bytes(), nil
 }
 
 // Debug logs debug message.
