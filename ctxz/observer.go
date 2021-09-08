@@ -102,6 +102,13 @@ func (o Observer) LevelObservers() []*logz.Observer {
 	return []*logz.Observer{o.debug, o.info, o.important, o.warn, o.error}
 }
 
+// WithLogger returns a copy of Observer with logger, level buckets remain the same.
+func (o Observer) WithLogger(l ctxd.Logger) Observer {
+	o.logger = l
+
+	return o
+}
+
 // CtxdLogger is a service provider.
 func (o Observer) CtxdLogger() ctxd.Logger {
 	return o

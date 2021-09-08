@@ -24,6 +24,9 @@ func TestNewObserver(t *testing.T) {
 	o.Debug(ctx, "debug", "foo", "bar")
 	o.Info(ctx, "info", "foo", "bar")
 	o.Important(ctx, "important", "foo", "bar")
+
+	o = o.WithLogger(ctxd.NoOpLogger{})
+
 	o.Warn(ctx, "warn", "foo", "bar")
 	o.Error(ctx, "error", "foo", "bar")
 
