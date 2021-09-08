@@ -1,3 +1,5 @@
 /.idea
-/bench-*
-/unit.coverprofile
+/*.coverprofile
+/.vscode
+/bench-*.txt
+/vendor
