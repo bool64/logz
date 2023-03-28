@@ -23,7 +23,7 @@ type tplData struct {
 }
 
 // Handler creates HTTP handler to expose entries from observers.
-func Handler(observers ...*logz.Observer) http.Handler { // nolint:funlen // This template is lengthy.
+func Handler(observers ...*logz.Observer) http.Handler { //nolint:funlen // This template is lengthy.
 	// language=GoTemplate
 	tpl := `{{- /*gotype: github.com/bool64/logz/logzpage.tplData*/ -}}
 <!DOCTYPE html>
@@ -146,7 +146,7 @@ func Handler(observers ...*logz.Observer) http.Handler { // nolint:funlen // Thi
 	t, err := template.New("Logz").Funcs(template.FuncMap{
 		"marshal": marshal,
 		"histogram": func(buckets []logz.Bucket) template.HTML {
-			return template.HTML(Histogram(buckets)) // nolint:gosec // Data is well-formed.
+			return template.HTML(Histogram(buckets)) //nolint:gosec // Data is well-formed.
 		},
 		"time": func(t time.Time) string {
 			return t.Format(time.RFC3339)
@@ -207,7 +207,7 @@ func Handler(observers ...*logz.Observer) http.Handler { // nolint:funlen // Thi
 
 func marshal(v interface{}) template.JS {
 	if bb, ok := v.([]byte); ok {
-		return template.JS(bb) // nolint:gosec // Data is well-formed.
+		return template.JS(bb) //nolint:gosec // Data is well-formed.
 	}
 
 	b := bytes.Buffer{}
@@ -217,10 +217,10 @@ func marshal(v interface{}) template.JS {
 
 	err := enc.Encode(v)
 	if err != nil {
-		return template.JS(err.Error()) // nolint:gosec // Data is well-formed.
+		return template.JS(err.Error()) //nolint:gosec // Data is well-formed.
 	}
 
-	return template.JS(b.Bytes()) // nolint:gosec // Data is well-formed.
+	return template.JS(b.Bytes()) //nolint:gosec // Data is well-formed.
 }
 
 // Histogram renders distribution using HTML elements.

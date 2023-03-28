@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/vearutop/dynhist-go"
+	"github.com/vearutop/lograte/filter"
 )
 
 // Config defines observer configuration.
@@ -23,7 +24,7 @@ type Config struct {
 	// Default 10.
 	MaxSamples uint32
 
-	// SamplingInterval is the minimum amount of time needed to pass from a last sample collection in particular message family.
+	// SamplingInterval is the minimum amount of time needed to pass from a last Sample collection in particular message family.
 	// Messages that are observed too quickly after last sampling are counted, but not sampled.
 	// Default 1ms.
 	SamplingInterval time.Duration
@@ -35,6 +36,13 @@ type Config struct {
 	// DistRetentionPeriod is maximum age of bucket. Use -1 for unlimited.
 	// Default one week (168 hours).
 	DistRetentionPeriod time.Duration
+
+	// FilterMessage can reduce cardinality by filtering dynamic parts of messages.
+	// It uses github.com/vearutop/lograte/filter.Dynamic
+	// See https://pkg.go.dev/github.com/vearutop/lograte/filter#Dynamic.
+	// This option is not needed if you already have messages without dynamic interpolated values.
+	// This option worsen performance, so use it only if you need it.
+	FilterMessage bool
 }
 
 // Observer keeps track of messages.
@@ -54,7 +62,7 @@ type Observer struct {
 
 type entry struct {
 	msg                 string
-	samples             chan sample
+	samples             chan Sample
 	count               uint64
 	first               int64
 	latest              int64
@@ -62,13 +70,14 @@ type entry struct {
 	distRetentionPeriod int64
 }
 
-type sample struct {
+// Sample is a single sample of a message.
+type Sample struct {
 	Msg  string      `json:"msg"`
 	Data interface{} `json:"data"`
 	Time time.Time   `json:"time"`
 }
 
-func (en *entry) push(now int64, sample sample) {
+func (en *entry) push(now int64, sample Sample) {
 	cnt := atomic.AddUint64(&en.count, 1)
 
 	if en.distribution != nil {
@@ -89,7 +98,7 @@ func (en *entry) push(now int64, sample sample) {
 
 	atomic.StoreInt64(&en.latest, now)
 
-	// Push new sample.
+	// Push new Sample.
 	<-en.samples
 	en.samples <- sample
 }
@@ -121,10 +130,10 @@ func (l *Observer) initialize() {
 	}
 
 	l.other = &entry{
-		samples: make(chan sample, l.maxSamples),
+		samples: make(chan Sample, l.maxSamples),
 	}
 	for i := uint32(0); i < l.maxSamples; i++ {
-		l.other.samples <- sample{}
+		l.other.samples <- Sample{}
 	}
 
 	if l.distResolution > 0 {
@@ -141,10 +150,14 @@ func (l *Observer) ObserveMessage(msg string, data interface{}) {
 
 	tn := time.Now()
 	now := tn.UnixNano() / l.samplingInterval
-	s := sample{
+	s := Sample{
 		Msg:  msg,
 		Data: data,
 		Time: tn,
+	}
+
+	if l.Config.FilterMessage {
+		msg = string(filter.Dynamic([]byte(msg), 200))
 	}
 
 	if e, ok := l.entries.Load(msg); ok {
@@ -158,7 +171,7 @@ func (l *Observer) ObserveMessage(msg string, data interface{}) {
 			msg:     msg,
 			first:   now,
 			count:   0,
-			samples: make(chan sample, l.maxSamples),
+			samples: make(chan Sample, l.maxSamples),
 		}
 
 		if l.distResolution > 0 {
@@ -169,7 +182,7 @@ func (l *Observer) ObserveMessage(msg string, data interface{}) {
 		}
 
 		for i := uint32(0); i < l.maxSamples; i++ {
-			e.samples <- sample{}
+			e.samples <- Sample{}
 		}
 		l.entries.Store(msg, &e)
 		atomic.AddUint32(&l.count, 1)
@@ -208,7 +221,7 @@ func (l *Observer) exportEntry(en *entry, withSamples bool) Entry {
 	}
 
 	if withSamples {
-		e.Samples = make([]interface{}, 0, l.maxSamples)
+		e.Samples = make([]Sample, 0, l.maxSamples)
 
 		for i := int(l.maxSamples) - 1; i >= 0; i-- {
 			sample := <-en.samples
@@ -227,7 +240,7 @@ func (l *Observer) exportEntry(en *entry, withSamples bool) Entry {
 type Entry struct {
 	Message string
 	Count   uint64
-	Samples []interface{}
+	Samples []Sample
 	First   time.Time
 	Last    time.Time
 

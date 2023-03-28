@@ -20,6 +20,7 @@ They are useful for last mile observability of logs.
 * Adapter for [`go.uber.org/zap`](./zzap).
 * Adapter for [`github.com/bool64/ctxd`](./ctxz).
 * HTTP handler to serve aggregated messages.
+* Best effort [filtering](https://pkg.go.dev/github.com/vearutop/lograte/filter#Dynamic) of dynamic parts of messages.
 
 ![Screenshot](./_examples/screenshot.png)
 
@@ -30,6 +31,7 @@ zc := zap.NewDevelopmentConfig()
 zz, lo := zzap.NewOption(logz.Config{
     MaxCardinality: 5,
     MaxSamples:     10,
+	FilterMessage:  true,
 })
 
 l, err := zc.Build(zz)
@@ -40,6 +42,9 @@ if err != nil {
 l.Debug("starting example")
 l.Sugar().Infow("sample info", "one", 1, "two", 2)
 l.Error("unexpected end of the world")
+
+l.Warn("please be careful with asf872dfse732")
+l.Warn("please be careful with sdf890sdf0w9d") // These messages will be grouped together with help of filtering.
 
 l.Info("starting server at http://localhost:6060/")
 err = http.ListenAndServe("0.0.0.0:6060", logzpage.Handler(lo...))
