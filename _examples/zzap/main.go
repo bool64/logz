@@ -3,6 +3,7 @@ package main
 import (
 	"math/rand"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/bool64/logz"
@@ -17,6 +18,7 @@ func main() {
 	zz, lo := zzap.NewOption(logz.Config{
 		MaxCardinality: 5,
 		MaxSamples:     10,
+		FilterMessage:  true,
 	})
 
 	l, err := zc.Build(zz)
@@ -53,7 +55,7 @@ func main() {
 					keysAndValues = append(keysAndValues, lorem.Word(3, 6), lorem.Word(3, 6))
 				}
 
-				lw.Sugar().Warnw(msg, keysAndValues...)
+				lw.Sugar().Warnw(msg+" Dynamic"+strconv.Itoa(i)+".", keysAndValues...)
 
 				time.Sleep(time.Duration(1e9 * rand.Float64()))
 			}
@@ -61,7 +63,7 @@ func main() {
 	}
 
 	l.Info("starting server at http://localhost:6060/")
-	err = http.ListenAndServe("0.0.0.0:6060", logzpage.Handler(lo...))
+	err = http.ListenAndServe("localhost:6060", logzpage.Handler(lo...))
 	if err != nil {
 		l.Fatal(err.Error())
 	}
