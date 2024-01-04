@@ -29,7 +29,7 @@ func TestNewOption(t *testing.T) {
 	assert.Equal(t, uint64(1), entries[0].Count)
 	assert.Equal(t, "message", entries[0].Message)
 	j, err := json.Marshal(entries[0].Samples[0])
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Contains(t, string(j), `"msg":"message","index":1,"k":"v"`)
 }
 
