@@ -45,10 +45,16 @@ type Config struct {
 	FilterMessage bool
 }
 
-// Observer keeps track of messages.
-type Observer struct {
-	Config
+// NewObserver creates PreparedObserver.
+func NewObserver(cfg Config) *PreparedObserver {
+	o := PreparedObserver{}
+	o.initialize(cfg)
 
+	return &o
+}
+
+// PreparedObserver keeps track of messages.
+type PreparedObserver struct {
 	samplingInterval    int64
 	count               uint32
 	maxCardinality      uint32
@@ -56,8 +62,17 @@ type Observer struct {
 	distResolution      int
 	distRetentionPeriod int64
 	entries             sync.Map
-	once                sync.Once
 	other               *entry
+	filterMessage       bool
+}
+
+// Observer keeps track of messages.
+// Deprecated: use NewObserver() to avoid lazy init.
+type Observer struct {
+	Config
+	PreparedObserver
+
+	once sync.Once
 }
 
 type entry struct {
@@ -103,28 +118,28 @@ func (en *entry) push(now int64, sample Sample) {
 	en.samples <- sample
 }
 
-func (l *Observer) initialize() {
-	l.samplingInterval = int64(l.SamplingInterval)
+func (l *PreparedObserver) initialize(cfg Config) {
+	l.samplingInterval = int64(cfg.SamplingInterval)
 	if l.samplingInterval == 0 {
 		l.samplingInterval = int64(time.Millisecond) // 1ms sampling interval by default.
 	}
 
-	l.maxCardinality = l.MaxCardinality
+	l.maxCardinality = cfg.MaxCardinality
 	if l.maxCardinality == 0 {
 		l.maxCardinality = 100
 	}
 
-	l.maxSamples = l.MaxSamples
+	l.maxSamples = cfg.MaxSamples
 	if l.maxSamples == 0 {
 		l.maxSamples = 10
 	}
 
-	l.distResolution = l.DistResolution
+	l.distResolution = cfg.DistResolution
 	if l.distResolution == 0 {
 		l.distResolution = 100
 	}
 
-	l.distRetentionPeriod = int64(l.DistRetentionPeriod)
+	l.distRetentionPeriod = int64(cfg.DistRetentionPeriod)
 	if l.distRetentionPeriod == 0 {
 		l.distRetentionPeriod = int64(168 * time.Hour)
 	}
@@ -142,12 +157,23 @@ func (l *Observer) initialize() {
 		}
 		l.other.distRetentionPeriod = l.distRetentionPeriod
 	}
+
+	if cfg.FilterMessage {
+		l.filterMessage = true
+	}
 }
 
 // ObserveMessage updates aggregated information about message.
 func (l *Observer) ObserveMessage(msg string, data interface{}) {
-	l.once.Do(l.initialize)
+	l.once.Do(func() {
+		l.initialize(l.Config)
+	})
 
+	l.PreparedObserver.ObserveMessage(msg, data)
+}
+
+// ObserveMessage updates aggregated information about message.
+func (l *PreparedObserver) ObserveMessage(msg string, data interface{}) {
 	tn := time.Now()
 	now := tn.UnixNano() / l.samplingInterval
 	s := Sample{
@@ -156,7 +182,7 @@ func (l *Observer) ObserveMessage(msg string, data interface{}) {
 		Time: tn,
 	}
 
-	if l.Config.FilterMessage {
+	if l.filterMessage {
 		msg = string(filter.Dynamic([]byte(msg), 200))
 	}
 
@@ -193,7 +219,7 @@ func (l *Observer) ObserveMessage(msg string, data interface{}) {
 	}
 }
 
-func (l *Observer) exportEntry(en *entry, withSamples bool) Entry {
+func (l *PreparedObserver) exportEntry(en *entry, withSamples bool) Entry {
 	if en == nil {
 		return Entry{}
 	}
@@ -256,7 +282,7 @@ type Bucket struct {
 }
 
 // GetEntries returns a list of observed event entries without data samples.
-func (l *Observer) GetEntries() []Entry {
+func (l *PreparedObserver) GetEntries() []Entry {
 	result := make([]Entry, 0, atomic.LoadUint32(&l.count))
 
 	l.entries.Range(func(key, value interface{}) bool {
@@ -269,7 +295,7 @@ func (l *Observer) GetEntries() []Entry {
 }
 
 // GetEntriesWithSamples returns a list of observed event entries with data samples.
-func (l *Observer) GetEntriesWithSamples() []Entry {
+func (l *PreparedObserver) GetEntriesWithSamples() []Entry {
 	result := make([]Entry, 0, atomic.LoadUint32(&l.count))
 
 	l.entries.Range(func(key, value interface{}) bool {
@@ -282,7 +308,7 @@ func (l *Observer) GetEntriesWithSamples() []Entry {
 }
 
 // Find lookups entry by message.
-func (l *Observer) Find(msg string) Entry {
+func (l *PreparedObserver) Find(msg string) Entry {
 	var e Entry
 
 	l.entries.Range(func(key, value interface{}) bool {
@@ -299,7 +325,7 @@ func (l *Observer) Find(msg string) Entry {
 }
 
 // Other returns entry for other events.
-func (l *Observer) Other(withSamples bool) Entry {
+func (l *PreparedObserver) Other(withSamples bool) Entry {
 	return l.exportEntry(l.other, withSamples)
 }
 

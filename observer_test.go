@@ -11,7 +11,7 @@ import (
 )
 
 func TestObserver_ObserveMessage(t *testing.T) {
-	o := logz.Observer{}
+	o := logz.NewObserver(logz.Config{})
 
 	o.ObserveMessage("test", 123)
 	o.ObserveMessage("test", 456)
@@ -43,8 +43,7 @@ func TestObserver_ObserveMessage(t *testing.T) {
 }
 
 func TestObserver_ObserveMessage_filter(t *testing.T) {
-	o := logz.Observer{}
-	o.Config.FilterMessage = true
+	o := logz.NewObserver(logz.Config{FilterMessage: true})
 
 	o.ObserveMessage("test foo123", 123)
 	o.ObserveMessage("test bar456", 456)
@@ -76,7 +75,7 @@ func TestObserver_ObserveMessage_filter(t *testing.T) {
 }
 
 func BenchmarkObserver_ObserveMessage(b *testing.B) {
-	o := logz.Observer{}
+	o := logz.NewObserver(logz.Config{})
 	wg := sync.WaitGroup{}
 	concurrency := 50
 
@@ -99,8 +98,7 @@ func BenchmarkObserver_ObserveMessage(b *testing.B) {
 }
 
 func BenchmarkObserver_ObserveMessage_filter(b *testing.B) {
-	o := logz.Observer{}
-	o.Config.FilterMessage = true
+	o := logz.NewObserver(logz.Config{FilterMessage: true})
 	wg := sync.WaitGroup{}
 	concurrency := 50
 
