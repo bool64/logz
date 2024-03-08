@@ -4,11 +4,11 @@ go 1.19
 
 require (
 	github.com/bool64/ctxd v1.2.1
-	github.com/bool64/dev v0.2.33
+	github.com/bool64/dev v0.2.34
 	github.com/stretchr/testify v1.8.4
 	github.com/vearutop/dynhist-go v1.2.3
 	github.com/vearutop/lograte v1.1.3
-	go.uber.org/zap v1.26.0
+	go.uber.org/zap v1.27.0
 )
 
 require (
