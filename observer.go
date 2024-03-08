@@ -67,7 +67,7 @@ type PreparedObserver struct {
 }
 
 // Observer keeps track of messages.
-// Deprecated: use NewObserver() to avoid lazy init.
+// Use NewObserver() to create new instance.
 type Observer struct {
 	Config
 	PreparedObserver
@@ -285,7 +285,7 @@ type Bucket struct {
 func (l *PreparedObserver) GetEntries() []Entry {
 	result := make([]Entry, 0, atomic.LoadUint32(&l.count))
 
-	l.entries.Range(func(key, value interface{}) bool {
+	l.entries.Range(func(_, value interface{}) bool {
 		result = append(result, l.exportEntry(value.(*entry), false))
 
 		return true
@@ -298,7 +298,7 @@ func (l *PreparedObserver) GetEntries() []Entry {
 func (l *PreparedObserver) GetEntriesWithSamples() []Entry {
 	result := make([]Entry, 0, atomic.LoadUint32(&l.count))
 
-	l.entries.Range(func(key, value interface{}) bool {
+	l.entries.Range(func(_, value interface{}) bool {
 		result = append(result, l.exportEntry(value.(*entry), true))
 
 		return true
@@ -311,7 +311,7 @@ func (l *PreparedObserver) GetEntriesWithSamples() []Entry {
 func (l *PreparedObserver) Find(msg string) Entry {
 	var e Entry
 
-	l.entries.Range(func(key, value interface{}) bool {
+	l.entries.Range(func(_, value interface{}) bool {
 		if value.(*entry).msg == msg {
 			e = l.exportEntry(value.(*entry), true)
 

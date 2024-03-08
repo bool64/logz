@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 
 	"github.com/bool64/ctxd"
 	"github.com/bool64/logz"
@@ -41,7 +42,7 @@ func (t tuples) MarshalJSON() ([]byte, error) {
 	)
 
 	for i, l := range kv {
-		if label == "" {
+		if label == "" { //nolint:nestif
 			label, ok = l.(string)
 			if !ok {
 				m["malformedFields"] = kv[i:]
@@ -49,6 +50,18 @@ func (t tuples) MarshalJSON() ([]byte, error) {
 				break
 			}
 		} else {
+			if err, ok := l.(error); ok {
+				l = err.Error()
+
+				var se ctxd.StructuredError
+
+				if errors.As(err, &se) {
+					for k, v := range se.Fields() {
+						m[k] = v
+					}
+				}
+			}
+
 			m[label] = l
 			label = ""
 		}

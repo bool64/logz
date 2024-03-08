@@ -27,10 +27,12 @@ func TestNewObserver(t *testing.T) {
 
 	o = o.WithLogger(ctxd.NoOpLogger{})
 
-	o.Warn(ctx, "warn", "foo", "bar")
-	o.Error(ctx, "error", "foo", "bar")
+	err := ctxd.NewError(ctx, "oops", "errDetail", 321)
 
-	req, err := http.NewRequest(http.MethodGet, "/debug/logz?level=Info&msg=info", nil)
+	o.Warn(ctx, "warn", "foo", "bar")
+	o.Error(ctx, "error", "foo", "bar", "error", err)
+
+	req, err := http.NewRequest(http.MethodGet, "/debug/logz?level=Error&msg=error", nil)
 	require.NoError(t, err)
 
 	rw := httptest.NewRecorder()
@@ -38,6 +40,8 @@ func TestNewObserver(t *testing.T) {
 	logzpage.Handler(o.LevelObservers()...).ServeHTTP(rw, req)
 
 	assert.Contains(t, rw.Body.String(), `{
+ &#34;errDetail&#34;: 321,
+ &#34;error&#34;: &#34;oops&#34;,
  &#34;foo&#34;: &#34;bar&#34;,
  &#34;shared&#34;: 123
 }`)
