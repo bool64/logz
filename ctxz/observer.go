@@ -4,8 +4,10 @@ package ctxz
 import (
 	"bytes"
 	"context"
+	"encoding"
 	"encoding/json"
 	"errors"
+	"fmt"
 
 	"github.com/bool64/ctxd"
 	"github.com/bool64/logz"
@@ -26,7 +28,7 @@ type tuples struct {
 	kv  []interface{}
 }
 
-func (t tuples) MarshalJSON() ([]byte, error) {
+func (t tuples) MarshalJSON() ([]byte, error) { //nolint:funlen,cyclop
 	kv := t.kv[0:len(t.kv):len(t.kv)]
 
 	ctxFields := ctxd.Fields(t.ctx)
@@ -39,10 +41,11 @@ func (t tuples) MarshalJSON() ([]byte, error) {
 	var (
 		label string
 		ok    bool
+		err   error
 	)
 
 	for i, l := range kv {
-		if label == "" { //nolint:nestif
+		if label == "" {
 			label, ok = l.(string)
 			if !ok {
 				m["malformedFields"] = kv[i:]
@@ -50,16 +53,26 @@ func (t tuples) MarshalJSON() ([]byte, error) {
 				break
 			}
 		} else {
-			if err, ok := l.(error); ok {
-				l = err.Error()
+			switch v := l.(type) {
+			case error:
+				l = v.Error()
 
 				var se ctxd.StructuredError
 
-				if errors.As(err, &se) {
+				if errors.As(v, &se) {
 					for k, v := range se.Fields() {
 						m[k] = v
 					}
 				}
+			case json.Marshaler:
+
+			case encoding.TextMarshaler:
+				l, err = v.MarshalText()
+				if err != nil {
+					return nil, err
+				}
+			case fmt.Stringer:
+				l = v.String()
 			}
 
 			m[label] = l
@@ -72,7 +85,7 @@ func (t tuples) MarshalJSON() ([]byte, error) {
 
 	e.SetEscapeHTML(false)
 
-	err := e.Encode(m)
+	err = e.Encode(m)
 	if err != nil {
 		return nil, err
 	}
